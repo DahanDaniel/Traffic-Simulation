@@ -24,6 +24,9 @@ CYAN = 0, 255, 255
 WHITE = 255, 255, 255
 BLACK = 0, 0, 0
 
+global counter # number of cars that have passed the endpoint
+counter = 0
+
 # Interaction sound
 pygame.mixer.quit()
 pygame.mixer.init()
@@ -122,6 +125,7 @@ def update(cars, dt):
     velocities += 1e-3 * acc * dt
     velocities[velocities < 0] = 0
     progresses += dt * 1e-3 * velocities
+    globals()['counter'] += np.count_nonzero(progresses>=loop_length)
     progresses %= loop_length
     
     # # 'Ouch' Sound
@@ -132,7 +136,7 @@ def update(cars, dt):
         cars[i].progress = progresses[i]
         cars[i].velocity = velocities[i]
         cars[i].line = lines[i]
-    # globals()['counter'] += np.count_nonzero(cars[0]==0)
+    
     return cars
 
 def setup_gui(**kwargs):
@@ -205,9 +209,10 @@ def paint(cars, gui):
     lines = np.array([cars[i].line for i in range(len(cars))])
     
     gui.screen.fill(BLACK)
+    cars_passed = globals()['counter']
     if gui.t > 5e2:
         gui.text = gui.font.render(
-            f'Number of cars = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {np.array(velocities).mean()*n:.3f} cars/s', True, WHITE
+            f'Number of cars = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {cars_passed/gui.t*1000:.3f} cars/s; ', True, WHITE
         )
         gui.time = 0
     gui.screen.blit(gui.text, (10, 10))

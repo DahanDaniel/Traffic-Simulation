@@ -24,7 +24,7 @@ stop_dist = 0.025
 brakes = 0.2
 acceleration = 0.1
 max_speed = 0.9
-global counter # number of cars that passed endpoint
+global counter # number of cars that have passed the endpoint
 counter = 0
 
 pygame.mixer.quit()
