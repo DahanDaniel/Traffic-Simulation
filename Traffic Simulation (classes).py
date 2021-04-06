@@ -108,7 +108,7 @@ def update(cars, dt):
     velocities = np.array([cars[i].velocity for i in range(len(cars))])
     lines = np.array([cars[i].line for i in range(len(cars))])
     
-    v_prev = velocities.copy()
+    v_prev = velocities.copy() # copy for sound
     spacing_cars = spacing(cars)
     dist_cars = dist_to_next(cars)
     close, slow = dist_cars < close_dist, velocities < max_speed
@@ -123,9 +123,10 @@ def update(cars, dt):
     velocities[velocities < 0] = 0
     progresses += dt * 1e-3 * velocities
     
-    if np.any(v_prev-velocities > 2*brakes):
-        OuchSnd.play()
-    progresses %= loop_length
+    # # 'Ouch' Sound
+    # if np.any(v_prev-velocities > 2*brakes):
+    #     OuchSnd.play()
+    # progresses %= loop_length
     
     for i in range(len(cars)):
         cars[i].progress = progresses[i]

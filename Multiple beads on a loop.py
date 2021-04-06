@@ -1,3 +1,5 @@
+#Original code by Robert Budzyński
+#Warsaw University, Faculty of Physics
 #Multiple beads on a loop
 import numpy as np
 from dataclasses import dataclass
