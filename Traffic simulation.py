@@ -147,11 +147,12 @@ def update(cars, dt):
     stop = np.array([dist_cars < stop_dist]) #np.logical_and(np.array([dist_cars < stop_dist]),np.logical_not(switch_lines))
     v[tuple(stop.tolist())] = 0
     
-    if np.any(v_prev-v > brakes):
-        OuchSnd.play()
+    globals()['counter'] += np.count_nonzero(cars[0]>=loop_length)
     progress %= loop_length
     
-    globals()['counter'] += np.count_nonzero(cars[0]==0)
+    if np.any(v_prev-v > brakes):
+        OuchSnd.play()
+    
     return cars
 
 
@@ -201,9 +202,10 @@ def paint_intro(gui):
 def paint(cars, gui):
 
     gui.screen.fill(BLACK)
+    cars_passed = globals()['counter']
     if gui.t > 5e2:
         gui.text = gui.font.render(
-            f'Number of cars = {n}; average velocity: {cars[1].mean()*100:.3f} %/s; stream: {cars[1].mean()*n:.3f} cars/s', True, WHITE
+            f'Number of cars = {n}; average velocity: {cars[1].mean()*100:.3f} %/s; stream: {cars_passed/gui.t*1000:.3f} cars/s', True, WHITE
         )
         gui.time = 0
     gui.screen.blit(gui.text, (10, 10))
