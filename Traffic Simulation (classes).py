@@ -9,7 +9,7 @@ from os import environ
 environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 
 # Model parameters
-n = 11  # number of cars
+n = 9  # number of cars
 loop_length = 1
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
 stop_dist = 0.025
@@ -122,11 +122,11 @@ def update(cars, dt):
     velocities += 1e-3 * acc * dt
     velocities[velocities < 0] = 0
     progresses += dt * 1e-3 * velocities
+    progresses %= loop_length
     
     # # 'Ouch' Sound
     # if np.any(v_prev-velocities > 2*brakes):
     #     OuchSnd.play()
-    # progresses %= loop_length
     
     for i in range(len(cars)):
         cars[i].progress = progresses[i]
