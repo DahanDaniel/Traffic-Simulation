@@ -9,13 +9,14 @@ from os import environ
 environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 
 # Model parameters
-n = 9  # number of cars
+n = 37  # number of cars
 loop_length = 1
+number_of_lanes = 4
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
 stop_dist = 0.025
 brakes = 0.2
 acceleration = 0.1
-max_speed = 0.9
+max_speed = 1
 
 # Constants of nature
 RED = 255, 0, 0
@@ -25,7 +26,7 @@ WHITE = 255, 255, 255
 BLACK = 0, 0, 0
 
 global counter # number of cars that have passed the endpoint
-counter = 0
+globals()['counter'] = 0
 
 # Interaction sound
 pygame.mixer.quit()
@@ -54,7 +55,7 @@ class car:
     
     progress: float = 0
     velocity: float = 0
-    line: int = 0
+    lane: int = 0
     close_dist: float = close_dist
     acceleration: float = acceleration
     breaks: float = brakes
@@ -69,33 +70,28 @@ def init(n):
 
     cars = np.array([car(progress = i/n*loop_length,
                          velocity = 0.1*np.random.random(),
-                         line = np.random.randint(2))
+                         lane = np.random.randint(number_of_lanes))
                          for i in range(n)])
     return cars
 
 def dist_to_next(cars):
     
     progresses = np.array([cars[i].progress for i in range(len(cars))])
-    velocities = np.array([cars[i].velocity for i in range(len(cars))])
-    lines = np.array([cars[i].line for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
     
-    ind = np.lexsort((progresses,lines))
-    Sorted = (np.array([(progresses[i],velocities[i],lines[i]) for i in ind])).T
+    ind = np.lexsort((progresses,lanes))
+    Sorted = (np.array([(progresses[i],lanes[i]) for i in ind])).T
     
-    line0 = np.split(Sorted, np.where(np.diff(Sorted[:,2]))[0]+1)[0]
-    line1 = np.split(Sorted, np.where(np.diff(Sorted[:,2]))[0]+1)[1]
+    same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
     
-    dist0 = (np.roll(line0[0], -1) - line0[0] + loop_length) % loop_length
-    dist1 = (np.roll(line1[0], -1) - line1[0] + loop_length) % loop_length
-    dist = np.concatenate((dist0, dist1))
+    distances = np.array([((np.roll(same_lane[i], -1) - same_lane[i] + loop_length) % loop_length) for i in range(np.shape(same_lane)[0])])
+    dist = np.concatenate(distances)
     
     ind2 = np.argsort(ind)
     res = (np.array([(dist[i]) for i in ind2])).T
     return res
 
-def spacing(cars):
-    
-    progresses = np.array([cars[i].progress for i in range(len(cars))])
+def spacing(progresses):
     
     ind = np.argsort(progresses)
 
@@ -105,26 +101,114 @@ def spacing(cars):
     res = (np.array([(dist[i]) for i in ind2])).T
     return res
 
+def dist_top_lane(cars):
+    
+    progresses = np.array([cars[i].progress for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
+    
+    ind = np.lexsort((progresses,lanes))
+    Sorted = (np.array([(progresses[i],lanes[i]) for i in ind])).T
+    
+    same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
+    
+    adjacent_lanes = np.array([np.concatenate(
+        [same_lane[i],
+         same_lane[i-1] if i>0 else [] ]) for i in range(np.shape(same_lane)[0])])
+    
+    distances = np.array([spacing(adjacent_lanes[i])[:len(same_lane[i])] for i in range(np.shape(adjacent_lanes)[0])])
+    dist = np.concatenate(distances)
+    
+    ind2 = np.argsort(ind)
+    res = (np.array([(dist[i]) for i in ind2])).T
+    return res
+
+def dist_bottom_lane(cars):
+    
+    progresses = np.array([cars[i].progress for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
+    
+    ind = np.lexsort((progresses,lanes))
+    Sorted = (np.array([(progresses[i],lanes[i]) for i in ind])).T
+    
+    same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
+    
+    adjacent_lanes = np.array([np.concatenate(
+        [same_lane[i],
+         same_lane[i+1] if i<np.shape(same_lane)[0]-1 else []]) for i in range(np.shape(same_lane)[0])])
+    
+    distances = np.array([spacing(adjacent_lanes[i])[:len(same_lane[i])] for i in range(np.shape(adjacent_lanes)[0])])
+    dist = np.concatenate(distances)
+    
+    ind2 = np.argsort(ind)
+    res = (np.array([(dist[i]) for i in ind2])).T
+    return res
+
+# def dist_adjacent_lanes(cars):
+    
+#     progresses = np.array([cars[i].progress for i in range(len(cars))])
+#     lanes = np.array([cars[i].lane for i in range(len(cars))])
+    
+#     ind = np.lexsort((progresses,lanes))
+#     Sorted = (np.array([(progresses[i],lanes[i]) for i in ind])).T
+    
+#     same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
+    
+#     adjacent_lanes = np.array([np.concatenate(
+#         [same_lane[i],
+#          same_lane[i-1] if i>0 else [],
+#          same_lane[i+1] if i<np.shape(same_lane)[0]-1 else []]) for i in range(np.shape(same_lane)[0])])
+    
+#     distances = np.array([spacing(adjacent_lanes[i])[:len(same_lane[i])] for i in range(np.shape(adjacent_lanes)[0])])
+#     dist = np.concatenate(distances)
+    
+#     ind2 = np.argsort(ind)
+#     res = (np.array([(dist[i]) for i in ind2])).T
+#     return res
+
+def change_lanes(cars):
+    
+    velocities = np.array([cars[i].velocity for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
+    
+    dist_cars = dist_to_next(cars)
+    
+    switch_if = np.logical_and(np.array([dist_cars < close_dist]),
+                       np.array([velocities > 0.05*max_speed]))
+    
+    switch_top = np.logical_and(switch_if,
+        np.array([dist_cars <= dist_top_lane(cars)]))
+    switch_bottom = np.logical_and(switch_if,
+        np.array([dist_cars <= dist_bottom_lane(cars)]))
+    both = np.logical_and(switch_top,switch_bottom)
+    
+    which = np.logical_or(switch_bottom,switch_top)
+    
+    lanes[tuple(both.tolist())] += np.random.choice((-1,1))
+    lanes[tuple(np.logical_and(switch_top,np.logical_not(both)))] -= 1
+    lanes[tuple(np.logical_and(switch_bottom,np.logical_not(both)))] += 1
+    lanes[lanes == number_of_lanes] -= 2
+    lanes[lanes == -1] += 2
+    
+    return lanes
+
 def update(cars, dt):
     
     progresses = np.array([cars[i].progress for i in range(len(cars))])
     velocities = np.array([cars[i].velocity for i in range(len(cars))])
-    lines = np.array([cars[i].line for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
     
     v_prev = velocities.copy() # copy for sound
-    spacing_cars = spacing(cars)
     dist_cars = dist_to_next(cars)
     close, slow = dist_cars < close_dist, velocities < max_speed
     acc = -brakes * (close) + acceleration * (slow & ~close)
-    switch_lines = np.logical_and(np.logical_and(np.array([dist_cars < 3*stop_dist]),np.array([velocities > 0.05*max_speed])),np.array([dist_cars <= spacing_cars]))
-    lines[tuple(switch_lines.tolist())] += 1
-    lines = np.mod(lines,2)
-    stop = np.array([dist_cars < stop_dist]) #np.logical_and(np.array([dist_cars < stop_dist]),np.logical_not(switch_lines))
-    velocities[tuple(stop.tolist())] = 0
+    lanes = change_lanes(cars)
     
     velocities += 1e-3 * acc * dt
     velocities[velocities < 0] = 0
+    velocities[velocities > max_speed] = max_speed
     progresses += dt * 1e-3 * velocities
+    stop = np.array([dist_cars <= stop_dist])
+    velocities[tuple(stop.tolist())] = 0
     globals()['counter'] += np.count_nonzero(progresses>=loop_length)
     progresses %= loop_length
     
@@ -135,13 +219,19 @@ def update(cars, dt):
     for i in range(len(cars)):
         cars[i].progress = progresses[i]
         cars[i].velocity = velocities[i]
-        cars[i].line = lines[i]
+        cars[i].lane = lanes[i]
+    
+    # dist_cars = dist_to_next(cars)
     
     return cars
+
+def weird_division(n, d):
+    return n / d if d else 0
 
 def setup_gui(**kwargs):
 
     velocities = np.array([cars[i].velocity for i in range(len(cars))])
+    cars_passed = globals()['counter']
         
     gui = _gui(**kwargs)
     pygame.init()
@@ -149,7 +239,7 @@ def setup_gui(**kwargs):
     pygame.display.set_caption('cars on a Ring')
     gui.font = pygame.font.SysFont('Courier New, courier, monospace', 14, bold=True)
     gui.text = gui.font.render(
-        f'N = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {np.array(velocities).mean()*n:.3f} cars/s', True, WHITE
+        f'N = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {weird_division(cars_passed,gui.t)*1000:.3f} cars/s; time: {gui.t/1000} s', True, WHITE
     )
     gui.clock = pygame.time.Clock()
     return gui
@@ -206,22 +296,23 @@ def paint(cars, gui):
 
     progresses = np.array([cars[i].progress for i in range(len(cars))])
     velocities = np.array([cars[i].velocity for i in range(len(cars))])
-    lines = np.array([cars[i].line for i in range(len(cars))])
+    lanes = np.array([cars[i].lane for i in range(len(cars))])
     
     gui.screen.fill(BLACK)
     cars_passed = globals()['counter']
     if gui.t > 5e2:
         gui.text = gui.font.render(
-            f'Number of cars = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {cars_passed/gui.t*1000:.3f} cars/s; ', True, WHITE
+            f'Number of cars = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {weird_division(cars_passed,gui.t)*1000:.3f} cars/s; time: {gui.t/1000} s', True, WHITE
         )
         gui.time = 0
     gui.screen.blit(gui.text, (10, 10))
     
+    # Draw lanes
+    pygame.draw.line(gui.screen,gui.line_color,(0,gui.center[1]+10*number_of_lanes),(gui.width,gui.center[1]+10*number_of_lanes),gui.line_width)
+    pygame.draw.line(gui.screen,gui.line_color,(0,gui.center[1]-10*number_of_lanes),(gui.width,gui.center[1]-10*number_of_lanes),gui.line_width)
     
-    
-    pygame.draw.line(gui.screen,gui.line_color,(0,gui.center[1]+20),(gui.width,gui.center[1]+20),gui.line_width)
-    pygame.draw.line(gui.screen,gui.line_color,(0,gui.center[1]-20),(gui.width,gui.center[1]-20),gui.line_width)
-    draw_line_dashed(gui.screen,gui.line_color,(0,gui.center[1]),(gui.width,gui.center[1]),gui.line_width)
+    for i in range(number_of_lanes):
+        draw_line_dashed(gui.screen,gui.line_color,(0,gui.center[1]-10*number_of_lanes+20*i),(gui.width,gui.center[1]-10*number_of_lanes+20*i),gui.line_width)
     
     #rect(gui.screen, gui.line_color, (gui.center[0]-gui.radius,gui.center[1]-gui.radius,2*gui.radius,2*gui.radius), gui.line_width)
     # x = gui.center[0] + (gui.radius * np.cos(cars[0])/(np.maximum(np.abs(np.cos(cars[0])),np.abs(np.sin(cars[0]))))).astype('int')
@@ -230,7 +321,7 @@ def paint(cars, gui):
     #circle(gui.screen, gui.line_color, gui.center, gui.radius, gui.line_width)
     
     x = (progresses*gui.width / loop_length).astype('int')
-    y = (gui.center[1]-10+20*lines)*np.ones(np.shape(progresses))
+    y = (gui.center[1]+10-10*number_of_lanes+20*lanes)
     xy = np.array((x, y)).T
     for color, pos in zip(car_colors(cars), xy):
         pygame.draw.circle(gui.screen, color, pos, gui.car_radius)
