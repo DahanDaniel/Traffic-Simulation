@@ -11,7 +11,7 @@ environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 # Model parameters
 n = 37  # number of cars
 loop_length = 1
-number_of_lanes = 4
+number_of_lanes = 5
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
 stop_dist = 0.025
 brakes = 0.2
@@ -111,6 +111,7 @@ def dist_top_lane(cars):
     
     same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
     
+    # Check adjacent lanes for space
     adjacent_lanes = np.array([np.concatenate(
         [same_lane[i],
          same_lane[i-1] if i>0 else [] ]) for i in range(np.shape(same_lane)[0])])
@@ -132,6 +133,7 @@ def dist_bottom_lane(cars):
     
     same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
     
+    # Check adjacent lanes for space
     adjacent_lanes = np.array([np.concatenate(
         [same_lane[i],
          same_lane[i+1] if i<np.shape(same_lane)[0]-1 else []]) for i in range(np.shape(same_lane)[0])])
@@ -153,6 +155,7 @@ def dist_bottom_lane(cars):
     
 #     same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
     
+#     # Check adjacent lanes for space
 #     adjacent_lanes = np.array([np.concatenate(
 #         [same_lane[i],
 #          same_lane[i-1] if i>0 else [],
