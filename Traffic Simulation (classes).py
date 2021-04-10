@@ -11,7 +11,7 @@ environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 # Model parameters
 n = 37  # number of cars
 loop_length = 1
-number_of_lanes = 5
+number_of_lanes = 4
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
 stop_dist = 0.025
 brakes = 0.2
@@ -37,8 +37,8 @@ OuchSnd = pygame.mixer.Sound('Ouch.wav')
 @dataclass
 class _gui:
 
-    width: int = 800
-    height: int = 800
+    width: int = 720
+    height: int = 100 + 20*number_of_lanes
     center: Tuple[int, int] = width // 2, height // 2
     radius: int = int(0.33 * min(width, height))
     line_width: int = 1
@@ -184,13 +184,14 @@ def change_lanes(cars):
         np.array([dist_cars <= dist_bottom_lane(cars)]))
     both = np.logical_and(switch_top,switch_bottom)
     
-    which = np.logical_or(switch_bottom,switch_top)
-    
     lanes[tuple(both.tolist())] += np.random.choice((-1,1))
     lanes[tuple(np.logical_and(switch_top,np.logical_not(both)))] -= 1
     lanes[tuple(np.logical_and(switch_bottom,np.logical_not(both)))] += 1
-    lanes[lanes == number_of_lanes] -= 2
     lanes[lanes == -1] += 2
+    lanes[lanes == number_of_lanes] -= 2
+    
+    lanes[lanes >= number_of_lanes] = 0
+    lanes[lanes < 0] = 0
     
     return lanes
 
@@ -305,7 +306,7 @@ def paint(cars, gui):
     cars_passed = globals()['counter']
     if gui.t > 5e2:
         gui.text = gui.font.render(
-            f'Number of cars = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {weird_division(cars_passed,gui.t)*1000:.3f} cars/s; time: {gui.t/1000} s', True, WHITE
+            f'N = {n}; average velocity: {np.array(velocities).mean()*100:.3f} %/s; stream: {weird_division(cars_passed,gui.t)*1000:.3f} cars/s; time: {gui.t/1000} s', True, WHITE
         )
         gui.time = 0
     gui.screen.blit(gui.text, (10, 10))
