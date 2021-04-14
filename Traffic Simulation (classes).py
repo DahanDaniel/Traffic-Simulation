@@ -9,7 +9,7 @@ from os import environ
 environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 
 # Model parameters
-n = 37  # number of cars
+n = 4  # number of cars
 loop_length = 1
 number_of_lanes = 4
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
@@ -83,8 +83,8 @@ def dist_to_next(cars):
     Sorted = (np.array([(progresses[i],lanes[i]) for i in ind])).T
     
     same_lane = np.array(np.split(Sorted[0], np.where(np.diff(Sorted[1]))[0]+1, axis=0))
-    
-    distances = np.array([((np.roll(same_lane[i], -1) - same_lane[i] + loop_length) % loop_length) for i in range(np.shape(same_lane)[0])])
+
+    distances = np.array([((np.roll(same_lane[i], -1) - same_lane[i] + loop_length) % loop_length) if (np.shape(same_lane[i])[0] != 1) else [loop_length] for i in range(np.shape(same_lane)[0])])
     dist = np.concatenate(distances)
     
     ind2 = np.argsort(ind)
@@ -210,7 +210,7 @@ def update(cars, dt):
     velocities += 1e-3 * acc * dt
     velocities[velocities < 0] = 0
     velocities[velocities > max_speed] = max_speed
-    progresses += dt * 1e-3 * velocities
+    progresses += dt * velocities * 1e-3 
     stop = np.array([dist_cars <= stop_dist])
     velocities[tuple(stop.tolist())] = 0
     globals()['counter'] += np.count_nonzero(progresses>=loop_length)
