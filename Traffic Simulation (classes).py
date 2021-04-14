@@ -9,7 +9,7 @@ from os import environ
 environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 
 # Model parameters
-n = 4  # number of cars
+n = 37  # number of cars
 loop_length = 1
 number_of_lanes = 4
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
