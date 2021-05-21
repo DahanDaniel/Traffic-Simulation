@@ -9,9 +9,9 @@ from os import environ
 environ["PYGAME_HIDE_SUPPORT_PROMPT"] = 'YES'
 
 # Model parameters
-n = 37  # number of cars
+n = 17#34#  # number of cars
 loop_length = 1
-number_of_lanes = 4
+number_of_lanes = 3#5#
 close_dist = 0.05 #loop_length / 1.5 / n  # distance for hitting the brakes
 stop_dist = 0.025
 brakes = 0.2
@@ -39,7 +39,7 @@ class _gui:
 
     width: int = 720
     height: int = 100 + 20*number_of_lanes
-    center: Tuple[int, int] = width // 2, height // 2
+    center: Tuple[int,int] = width // 2, height // 2
     radius: int = int(0.33 * min(width, height))
     line_width: int = 1
     line_color: Tuple[int, int, int] = WHITE
@@ -344,6 +344,11 @@ def run(cars, gui):
             gui.t += gui.clock.get_time()
             gui.dt = gui.clock.tick(60)
             cars = update(cars, gui.dt)
+            
+            velocities = np.array([cars[i].velocity for i in range(len(cars))])
+            with open("results.txt",'a+') as output:
+                # output.write('No cars | No lanes | Stream \n')
+                output.write('{0}\t{1}\t'.format(n, number_of_lanes)+'{0}\t{1}'.format(weird_division(globals()['counter'],gui.t)*1000,np.array(velocities).mean()*100)+'\n')
         else:
             gui.clock.tick(6)
         paint(cars, gui)
